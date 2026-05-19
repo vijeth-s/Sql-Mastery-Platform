@@ -125,6 +125,7 @@ The optimized build output appears in `dist/`.
 - This app uses `sql.js` to simulate a SQL database entirely in the browser.
 - Data is seeded from `src/services/database.js` and resets on page reload.
 - No production database or server is required for local use.
+- No backend.
 
 ## 💡 Next improvements
 
