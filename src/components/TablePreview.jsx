@@ -8,7 +8,7 @@ export default function TablePreview({ db, refreshKey }) {
 
   useEffect(() => {
     if (!db) return;
-    setPreview(getTablePreview(db, activeTable));
+    setPreview(getTablePreview(db, activeTable, 15));
   }, [db, activeTable, refreshKey]);
 
   return (
