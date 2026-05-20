@@ -8,6 +8,7 @@ import LessonPanel from "./components/LessonPanel";
 import CheatSheet from "./components/CheatSheet";
 import DatabaseCard from "./components/DatabaseCard";
 import TablePreview from "./components/TablePreview";
+import LevelDescriptions from "./components/LevelDescriptions";
 import MobileMenu from "./components/MobileMenu";
 import { lessonsData } from "./data/lessonsData";
 import { createDatabase, getTableCount, tableMetadata } from "./services/database";
@@ -84,7 +85,7 @@ function PlaygroundPage({ db, resetDatabase, refreshKey, onDatabaseChanged }) {
       </div>
       <aside className="space-y-4">
         <TablePreview db={db} refreshKey={refreshKey} />
-        <LessonPanel lessons={[...lessonsData.beginner, ...lessonsData.intermediate].slice(0, 5)} compact />
+        <LevelDescriptions />
       </aside>
     </main>
   );
