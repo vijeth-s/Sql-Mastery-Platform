@@ -83,8 +83,8 @@ function PlaygroundPage({ db, resetDatabase, refreshKey, onDatabaseChanged }) {
         <SQLPlayground db={db} resetDatabase={resetDatabase} onDatabaseChanged={onDatabaseChanged} />
       </div>
       <aside className="space-y-4">
-        <LessonPanel lessons={[...lessonsData.beginner, ...lessonsData.intermediate].slice(0, 5)} compact />
         <TablePreview db={db} refreshKey={refreshKey} />
+        <LessonPanel lessons={[...lessonsData.beginner, ...lessonsData.intermediate].slice(0, 5)} compact />
       </aside>
     </main>
   );
