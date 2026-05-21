@@ -178,12 +178,12 @@ WHERE orders.status = 'paid'
 ORDER BY total DESC;`;
 
 export const tableMetadata = [
-  { name: "students", accent: "from-sky-400 to-cyan-300", description: "Learners with grades, cities, and GPA scores." },
-  { name: "employees", accent: "from-violet-400 to-fuchsia-300", description: "Team members with roles, salaries, and departments." },
-  { name: "departments", accent: "from-indigo-400 to-sky-300", description: "Departments with location and budget." },
-  { name: "products", accent: "from-cyan-300 to-emerald-300", description: "Catalog items with category, price, and stock." },
-  { name: "customers", accent: "from-blue-400 to-violet-300", description: "Customer accounts with regions and signup dates." },
-  { name: "orders", accent: "from-fuchsia-400 to-sky-300", description: "Purchases connecting customers and products." }
+  { name: "Students", accent: "from-sky-400 to-cyan-300", description: "Learners with grades, cities, and GPA scores." },
+  { name: "Employees", accent: "from-violet-400 to-fuchsia-300", description: "Team members with roles, salaries, and departments." },
+  { name: "Departments", accent: "from-indigo-400 to-sky-300", description: "Departments with location and budget." },
+  { name: "Products", accent: "from-cyan-300 to-emerald-300", description: "Catalog items with category, price, and stock." },
+  { name: "Customers", accent: "from-blue-400 to-violet-300", description: "Customer accounts with regions and signup dates." },
+  { name: "Orders", accent: "from-fuchsia-400 to-sky-300", description: "Purchases connecting customers and products." }
 ];
 
 export async function createDatabase() {
