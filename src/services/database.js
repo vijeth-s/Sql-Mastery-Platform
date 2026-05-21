@@ -5,7 +5,7 @@ let SQLModulePromise;
 
 const schema = [
   `CREATE TABLE students (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     age INTEGER,
     grade TEXT,
@@ -13,13 +13,13 @@ const schema = [
     gpa REAL
   );`,
   `CREATE TABLE departments (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     location TEXT,
     budget INTEGER
   );`,
   `CREATE TABLE employees (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     role TEXT,
     salary INTEGER,
@@ -28,21 +28,21 @@ const schema = [
     FOREIGN KEY (department_id) REFERENCES departments(id)
   );`,
   `CREATE TABLE products (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     category TEXT,
     price REAL,
     stock INTEGER
   );`,
   `CREATE TABLE customers (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT NOT NULL,
     email TEXT,
     region TEXT,
     joined_at TEXT
   );`,
   `CREATE TABLE orders (
-    id INTEGER PRIMARY KEY,
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
     customer_id INTEGER,
     product_id INTEGER,
     quantity INTEGER,
@@ -178,12 +178,12 @@ WHERE orders.status = 'paid'
 ORDER BY total DESC;`;
 
 export const tableMetadata = [
-  { name: "students", accent: "from-sky-400 to-cyan-300", description: "20 learners with grades, cities, and GPA scores." },
-  { name: "employees", accent: "from-violet-400 to-fuchsia-300", description: "20 team members with roles, salaries, and departments." },
-  { name: "departments", accent: "from-indigo-400 to-sky-300", description: "6 departments with location and budget." },
-  { name: "products", accent: "from-cyan-300 to-emerald-300", description: "15 catalog items with category, price, and stock." },
-  { name: "customers", accent: "from-blue-400 to-violet-300", description: "12 customer accounts with regions and signup dates." },
-  { name: "orders", accent: "from-fuchsia-400 to-sky-300", description: "30 purchases connecting customers and products." }
+  { name: "students", accent: "from-sky-400 to-cyan-300", description: "Learners with grades, cities, and GPA scores." },
+  { name: "employees", accent: "from-violet-400 to-fuchsia-300", description: "Team members with roles, salaries, and departments." },
+  { name: "departments", accent: "from-indigo-400 to-sky-300", description: "Departments with location and budget." },
+  { name: "products", accent: "from-cyan-300 to-emerald-300", description: "Catalog items with category, price, and stock." },
+  { name: "customers", accent: "from-blue-400 to-violet-300", description: "Customer accounts with regions and signup dates." },
+  { name: "orders", accent: "from-fuchsia-400 to-sky-300", description: "Purchases connecting customers and products." }
 ];
 
 export async function createDatabase() {
@@ -208,7 +208,7 @@ export function executeQuery(db, query) {
   };
 }
 
-export function getTablePreview(db, tableName, limit = 5) {
+export function getTablePreview(db, tableName, limit = 1000) {
   const result = db.exec(`SELECT * FROM ${tableName} LIMIT ${limit};`);
   return result[0] || { columns: [], values: [] };
 }
