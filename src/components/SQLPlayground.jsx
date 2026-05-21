@@ -18,6 +18,11 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
   const [elapsedMs, setElapsedMs] = useState("0.00");
   const [rowsChanged, setRowsChanged] = useState(0);
 
+  const extractCreatedTableName = (sql) => {
+    const match = sql.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["'`]?([A-Za-z_][A-Za-z0-9_]*)["'`]?/i);
+    return match ? match[1] : null;
+  };
+
   const runQuery = () => {
     try {
       const response = executeQuery(db, query);
@@ -25,6 +30,17 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
       setElapsedMs(response.elapsedMs);
       setRowsChanged(response.rowsChanged);
       setError("");
+
+      const createdTableName = extractCreatedTableName(query);
+      if (createdTableName) {
+        const description = window.prompt(`Table "${createdTableName}" was created successfully. Enter a short description:`)?.trim();
+        onDatabaseChanged({
+          createdTableName,
+          createdTableDescription: description || `${createdTableName} table.`
+        });
+        return;
+      }
+
       onDatabaseChanged();
     } catch (err) {
       setError(err.message);
