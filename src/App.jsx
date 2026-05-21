@@ -6,12 +6,11 @@ import Sidebar from "./components/Sidebar";
 import SQLPlayground from "./components/SQLPlayground";
 import LessonPanel from "./components/LessonPanel";
 import CheatSheet from "./components/CheatSheet";
-import DatabaseCard from "./components/DatabaseCard";
 import TablePreview from "./components/TablePreview";
 import LevelDescriptions from "./components/LevelDescriptions";
 import MobileMenu from "./components/MobileMenu";
 import { lessonsData } from "./data/lessonsData";
-import { createDatabase, getTableCount, tableMetadata } from "./services/database";
+import { createDatabase, tableMetadata } from "./services/database";
 
 const navItems = [
   { to: "/", label: "Playground", icon: Code2 },
@@ -64,27 +63,14 @@ function LessonsPage({ level, searchTerm, setSearchTerm }) {
   );
 }
 
-function PlaygroundPage({ db, resetDatabase, refreshKey, onDatabaseChanged }) {
-  const [counts, setCounts] = useState({});
-
-  useEffect(() => {
-    if (!db) return;
-    const nextCounts = Object.fromEntries(tableMetadata.map((table) => [table.name, getTableCount(db, table.name)]));
-    setCounts(nextCounts);
-  }, [db, refreshKey]);
-
+function PlaygroundPage({ db, resetDatabase, refreshKey, onDatabaseChanged, tableMetadata }) {
   return (
     <main className="grid min-w-0 flex-1 grid-cols-1 gap-4 overflow-y-auto px-4 pb-8 pt-4 xl:grid-cols-[minmax(0,1fr)_360px] lg:px-6">
       <div className="space-y-4">
-        <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {tableMetadata.map((table, index) => (
-            <DatabaseCard key={table.name} table={table} count={counts[table.name] ?? 0} index={index} />
-          ))}
-        </section>
         <SQLPlayground db={db} resetDatabase={resetDatabase} onDatabaseChanged={onDatabaseChanged} />
       </div>
       <aside className="space-y-4">
-        <TablePreview db={db} refreshKey={refreshKey} />
+        <TablePreview db={db} refreshKey={refreshKey} tableMetadata={tableMetadata} />
         <LevelDescriptions />
       </aside>
     </main>
@@ -98,6 +84,7 @@ export default function App() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState(readStoredSearch);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [tableMetadataState, setTableMetadataState] = useState(tableMetadata);
   const location = useLocation();
 
   const resetDatabase = async () => {
@@ -109,12 +96,46 @@ export default function App() {
         previous?.close();
         return nextDb;
       });
+      setTableMetadataState(tableMetadata);
       setRefreshKey((key) => key + 1);
     } catch (error) {
       setStartupError(error instanceof Error ? error.message : "SQLite failed to initialize.");
     } finally {
       setIsLoadingDb(false);
     }
+  };
+
+  const handleDatabaseChanged = ({ createdTableName, createdTableDescription } = {}) => {
+    setRefreshKey((key) => key + 1);
+
+    if (!createdTableName) return;
+
+    setTableMetadataState((previous) => {
+      if (previous.some((table) => table.name === createdTableName)) {
+        return previous;
+      }
+
+      const accentClasses = [
+        "from-sky-400 to-cyan-300",
+        "from-violet-400 to-fuchsia-300",
+        "from-indigo-400 to-sky-300",
+        "from-cyan-300 to-emerald-300",
+        "from-blue-400 to-violet-300",
+        "from-fuchsia-400 to-sky-300",
+        "from-amber-400 to-orange-400",
+        "from-emerald-400 to-teal-300"
+      ];
+
+      const nextAccent = accentClasses[previous.length % accentClasses.length];
+      return [
+        ...previous,
+        {
+          name: createdTableName,
+          description: createdTableDescription ?? `${createdTableName} table.`,
+          accent: nextAccent
+        }
+      ];
+    });
   };
 
   useEffect(() => {
@@ -194,7 +215,7 @@ export default function App() {
             </div>
           ) : (
             <Routes>
-              <Route path="/" element={<PlaygroundPage db={db} resetDatabase={resetDatabase} refreshKey={refreshKey} onDatabaseChanged={() => setRefreshKey((key) => key + 1)} />} />
+              <Route path="/" element={<PlaygroundPage db={db} resetDatabase={resetDatabase} refreshKey={refreshKey} onDatabaseChanged={handleDatabaseChanged} tableMetadata={tableMetadataState} />} />
               <Route path="/beginner" element={<LessonsPage level="beginner" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
               <Route path="/intermediate" element={<LessonsPage level="intermediate" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
               <Route path="/advanced" element={<LessonsPage level="advanced" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
