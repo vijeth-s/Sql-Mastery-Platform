@@ -7,7 +7,7 @@ export default function Sidebar({ navItems }) {
   const lessonPaths = ["/beginner", "/intermediate", "/advanced"];
 
   return (
-    <aside className="hidden w-72 shrink-0 border-r border-white/10 bg-ink-950/70 p-4 backdrop-blur-xl lg:block">
+    <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-ink-950/70 p-4 backdrop-blur-xl lg:block">
       <div className="mb-6 flex items-center gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br from-sky-400 to-violet-500 shadow-glow">
           <DatabaseZap className="h-6 w-6 text-white" />
