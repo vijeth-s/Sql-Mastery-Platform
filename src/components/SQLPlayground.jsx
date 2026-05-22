@@ -1,15 +1,13 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Play, RotateCcw, Wand2 } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { Play, RotateCcw, Wand2, Shuffle } from "lucide-react";
 import QueryResults from "./QueryResults";
 import { executeQuery, sampleQuery } from "../services/database";
+import { sampleQueryBank } from "../data/sampleQueries";
 
-const snippets = [
-  "SELECT * FROM students ORDER BY gpa DESC;",
-  "SELECT departments.name, COUNT(employees.id) AS team_size FROM departments LEFT JOIN employees ON departments.id = employees.department_id GROUP BY departments.name;",
-  "SELECT category, ROUND(AVG(price), 2) AS avg_price FROM products GROUP BY category HAVING avg_price > 50;",
-  "SELECT name, salary FROM employees WHERE salary > (SELECT AVG(salary) FROM employees);"
-];
+function pickRandom(arr, n) {
+  return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
+}
 
 export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) {
   const [query, setQuery] = useState(sampleQuery);
@@ -17,6 +15,7 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
   const [error, setError] = useState("");
   const [elapsedMs, setElapsedMs] = useState("0.00");
   const [rowsChanged, setRowsChanged] = useState(0);
+  const [visibleSnippets, setVisibleSnippets] = useState(() => pickRandom(sampleQueryBank, 4));
 
   const extractCreatedTableName = (sql) => {
     const match = sql.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["'`]?([A-Za-z_][A-Za-z0-9_]*)["'`]?/i);
@@ -56,6 +55,16 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
     setElapsedMs("0.00");
   };
 
+  const randomizeSnippets = () => {
+    setVisibleSnippets((prev) => {
+      let next;
+      do {
+        next = pickRandom(sampleQueryBank, 4);
+      } while (JSON.stringify(next) === JSON.stringify(prev));
+      return next;
+    });
+  };
+
   return (
     <motion.section initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} className="glass overflow-hidden rounded-lg">
       <div className="flex flex-col gap-3 border-b border-white/10 p-4 md:flex-row md:items-center md:justify-between">
@@ -63,7 +72,7 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
           <p className="text-sm font-semibold uppercase tracking-[0.22em] text-violet-300">SQL Playground</p>
           <h2 className="mt-1 text-2xl font-bold text-white">Practice queries in a live SQLite database</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 self-end justify-end md:self-auto">
           <button onClick={handleReset} className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm font-semibold text-slate-200 transition hover:border-violet-300/50 hover:text-white">
             <RotateCcw className="h-4 w-4" />
             Reset Database
@@ -92,19 +101,40 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
         </div>
 
         <aside className="space-y-2">
-          <div className="flex items-center gap-2 text-sm font-semibold text-white">
-            <Wand2 className="h-4 w-4 text-sky-300" />
-            Sample queries
-          </div>
-          {snippets.map((snippet) => (
+          <div className="flex items-center justify-between gap-2 text-sm font-semibold text-white">
+            <span className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-sky-300" />
+              Sample queries
+            </span>
             <button
-              key={snippet}
-              onClick={() => setQuery(snippet)}
-              className="w-full rounded-lg border border-white/10 bg-slate-950/50 p-3 text-left font-mono text-xs leading-5 text-slate-300 transition hover:border-sky-300/40 hover:bg-sky-400/10 hover:text-sky-100"
+              onClick={randomizeSnippets}
+              title="Load random queries"
+              className="inline-flex items-center gap-1.5 rounded-md border border-white/10 bg-slate-950/60 px-3 py-2 text-xs font-semibold text-slate-200 transition hover:border-sky-300/40 hover:bg-slate-900"
             >
-              {snippet}
+              <Shuffle className="h-3.5 w-3.5" />
+              Randomize
             </button>
-          ))}
+          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={visibleSnippets.join("||")}
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.15 }}
+              className="space-y-2"
+            >
+              {visibleSnippets.map((snippet) => (
+                <button
+                  key={snippet}
+                  onClick={() => setQuery(snippet)}
+                  className="w-full rounded-lg border border-white/10 bg-slate-950/50 p-3 text-left font-mono text-xs leading-5 text-slate-300 transition hover:border-sky-300/40 hover:bg-sky-400/10 hover:text-sky-100"
+                >
+                  {snippet}
+                </button>
+              ))}
+            </motion.div>
+          </AnimatePresence>
         </aside>
       </div>
       <div className="border-t border-white/10 p-4">
