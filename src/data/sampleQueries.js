@@ -29,5 +29,20 @@ export const sampleQueryBank = [
   "SELECT name, city FROM students WHERE city IN ('Austin', 'Chicago', 'Seattle') ORDER BY name;",
   "SELECT orders.status, ROUND(SUM(products.price * orders.quantity), 2) AS total_value FROM orders JOIN products ON products.id = orders.product_id GROUP BY orders.status;",
   "SELECT customers.region, ROUND(SUM(products.price * orders.quantity), 2) AS revenue FROM orders JOIN customers ON customers.id = orders.customer_id JOIN products ON products.id = orders.product_id GROUP BY customers.region;",
-  "SELECT products.name, products.stock FROM products WHERE products.stock BETWEEN 20 AND 100 ORDER BY products.stock;"
+  "SELECT products.name, products.stock FROM products WHERE products.stock BETWEEN 20 AND 100 ORDER BY products.stock;",
+  "INSERT INTO students (name, age, grade, city, gpa) VALUES ('Noa Reed', 20, 'B', 'Denver', 3.3);",
+  "INSERT INTO orders (customer_id, product_id, quantity, order_date, status) VALUES (4, 3, 5, '2024-10-01', 'processing');",
+  "UPDATE products SET stock = stock - 2 WHERE id = 1;",
+  "UPDATE employees SET salary = salary * 1.05 WHERE department_id = 6;",
+  "DELETE FROM orders WHERE status = 'processing' AND order_date < '2024-04-01';",
+  "DELETE FROM students WHERE grade = 'D';",
+  "CREATE TABLE IF NOT EXISTS temp_sales (id INTEGER PRIMARY KEY AUTOINCREMENT, product_id INTEGER, quantity INTEGER, sale_date TEXT);",
+  "INSERT INTO temp_sales (product_id, quantity, sale_date) VALUES (2, 10, '2024-10-05');",
+  "ALTER TABLE temp_sales ADD COLUMN channel TEXT DEFAULT 'online';",
+  "SELECT name, city, grade FROM students WHERE gpa >= 3.5 ORDER BY grade DESC, gpa DESC;",
+  "SELECT products.name, CASE WHEN stock < 20 THEN 'Low stock' ELSE 'In stock' END AS stock_status FROM products;",
+  "SELECT customers.region, AVG(products.price * orders.quantity) AS avg_order_value FROM orders JOIN customers ON customers.id = orders.customer_id JOIN products ON products.id = orders.product_id GROUP BY customers.region;",
+  "WITH order_totals AS (SELECT customer_id, SUM(quantity * price) AS total FROM orders JOIN products ON products.id = orders.product_id GROUP BY customer_id) SELECT customers.name, order_totals.total FROM order_totals JOIN customers ON customers.id = order_totals.customer_id ORDER BY total DESC;",
+  "SELECT department_id, COUNT(*) AS employees_count, MIN(salary) AS min_salary, MAX(salary) AS max_salary FROM employees GROUP BY department_id;",
+  "SELECT strftime('%Y', joined_at) AS year_joined, COUNT(*) AS new_customers FROM customers GROUP BY year_joined ORDER BY year_joined;"
 ];
