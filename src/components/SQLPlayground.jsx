@@ -1,21 +1,30 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Play, RotateCcw, Wand2, Shuffle } from "lucide-react";
 import QueryResults from "./QueryResults";
 import { executeQuery, sampleQuery } from "../services/database";
 import { sampleQueryBank } from "../data/sampleQueries";
+import { usePlayground } from "../context/PlaygroundContext";
 
 function pickRandom(arr, n) {
   return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
 }
 
 export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) {
+  const { pendingQuery, setPendingQuery } = usePlayground();
   const [query, setQuery] = useState(sampleQuery);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [elapsedMs, setElapsedMs] = useState("0.00");
   const [rowsChanged, setRowsChanged] = useState(0);
   const [visibleSnippets, setVisibleSnippets] = useState(() => pickRandom(sampleQueryBank, 4));
+
+  useEffect(() => {
+    if (pendingQuery) {
+      setQuery(pendingQuery);
+      setPendingQuery("");
+    }
+  }, [pendingQuery, setPendingQuery]);
 
   const extractCreatedTableName = (sql) => {
     const match = sql.match(/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["'`]?([A-Za-z_][A-Za-z0-9_]*)["'`]?/i);
