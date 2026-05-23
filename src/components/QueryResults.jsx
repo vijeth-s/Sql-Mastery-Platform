@@ -35,6 +35,30 @@ export default function QueryResults({ result, error, elapsedMs, rowsChanged }) 
           <span>{rowsChanged} rows changed</span>
         </div>
       </div>
+      {hasRows && (
+        <div className="px-4 py-3 border-b border-white/10 flex flex-wrap gap-2 bg-slate-950/50">
+          <button
+            onClick={() => copyToClipboard(toCSV(result))}
+            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200"
+          >
+            Copy CSV
+          </button>
+
+          <button
+            onClick={() => downloadFile(toCSV(result), 'results.csv', 'text/csv')}
+            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200"
+          >
+            Download CSV
+          </button>
+
+          <button
+            onClick={() => copyToClipboard(toMarkdown(result))}
+            className="inline-flex items-center gap-2 rounded-md border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-slate-200"
+          >
+            Copy Markdown
+          </button>
+        </div>
+      )}
       {hasRows ? (
         <div className="max-h-[28rem] overflow-auto scrollbar-thin">
           <table className="min-w-full text-left text-sm">
@@ -61,4 +85,47 @@ export default function QueryResults({ result, error, elapsedMs, rowsChanged }) 
       )}
     </div>
   );
+}
+
+function toCSV(result) {
+  const columns = result.columns || [];
+  const values = result.values || [];
+  const header = columns.join(",");
+  const rows = values
+    .map((row) =>
+      row
+        .map((v) => {
+          const cell = v === null || v === undefined ? "" : String(v).replace(/"/g, '""');
+          return '"' + cell + '"';
+        })
+        .join(",")
+    )
+    .join("\n");
+  return header + (rows ? "\n" + rows : "");
+}
+
+function toMarkdown(result) {
+  const columns = result.columns || [];
+  const values = result.values || [];
+  const header = `| ${columns.join(" | ")} |`;
+  const separator = `| ${columns.map(() => "---").join(" | ")} |`;
+  const rows = values
+    .map((row) => `| ${row.map((v) => (v === null || v === undefined ? "" : String(v))).join(" | ")} |`)
+    .join("\n");
+  return header + "\n" + separator + (rows ? "\n" + rows : "");
+}
+
+function copyToClipboard(text) {
+  if (!navigator.clipboard) return;
+  navigator.clipboard.writeText(text).catch(() => {});
+}
+
+function downloadFile(content, filename, mime = "text/csv") {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
 }
