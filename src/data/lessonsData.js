@@ -953,47 +953,63 @@ export const lessonsData = {
 
 export const cheatSheetSections = [
   {
-    title: "Read Data",
+    title: "Querying Data in SQL",
     items: [
-      ["SELECT", "SELECT name, gpa FROM students;"],
+      ["SELECT", "SELECT * FROM employees;"],
       ["DISTINCT", "SELECT DISTINCT region FROM customers;"],
-      ["ORDER BY", "SELECT * FROM products ORDER BY price DESC;"],
-      ["LIMIT", "SELECT * FROM employees LIMIT 5;"]
+      ["WHERE", "SELECT * FROM employees WHERE salary > 55000;"],
+      ["LIMIT", "SELECT * FROM employees LIMIT 3;"],
+      ["FETCH", "SELECT * FROM employees FETCH FIRST 3 ROWS ONLY;"]
     ]
   },
   {
-    title: "Filter Data",
+    title: "Filtering Data in SQL",
     items: [
-      ["WHERE", "SELECT * FROM orders WHERE status = 'paid';"],
-      ["AND / OR", "SELECT * FROM students WHERE grade = 'A' OR gpa > 3.7;"],
+      ["WHERE", "SELECT * FROM employees WHERE department_id = 1;"],
+      ["LIKE", "SELECT * FROM employees WHERE name LIKE 'J%';"],
+      ["IN", "SELECT * FROM customers WHERE region IN ('Europe', 'Asia Pacific');"],
       ["BETWEEN", "SELECT * FROM products WHERE price BETWEEN 50 AND 200;"],
-      ["LIKE", "SELECT * FROM students WHERE name LIKE 'A%';"]
+      ["IS NULL", "SELECT * FROM customers WHERE email IS NULL;"]
     ]
   },
   {
-    title: "Aggregate",
+    title: "SQL Operator",
     items: [
-      ["COUNT", "SELECT COUNT(*) FROM customers;"],
-      ["GROUP BY", "SELECT category, AVG(price) FROM products GROUP BY category;"],
-      ["HAVING", "SELECT status, COUNT(*) FROM orders GROUP BY status HAVING COUNT(*) > 1;"]
+      ["AND", "SELECT * FROM employees WHERE department_id = 1 AND salary > 120000;"],
+      ["OR", "SELECT * FROM customers WHERE region = 'Europe' OR region = 'Asia Pacific';"],
+      ["NOT", "SELECT * FROM orders WHERE NOT status = 'paid';"],
+      ["ORDER BY", "SELECT * FROM employees ORDER BY salary DESC;"],
+      ["GROUP BY", "SELECT departments.name, COUNT(employees.id) AS employee_count FROM departments LEFT JOIN employees ON employees.department_id = departments.id GROUP BY departments.name;"]
     ]
   },
   {
-    title: "Join And Combine",
+    title: "Aggregation Data in SQL",
     items: [
-      ["INNER JOIN", "SELECT e.name, d.name FROM employees e JOIN departments d ON d.id = e.department_id;"],
-      ["LEFT JOIN", "SELECT d.name, e.name FROM departments d LEFT JOIN employees e ON e.department_id = d.id;"],
-      ["UNION", "SELECT city FROM students UNION SELECT location FROM departments;"],
-      ["EXCEPT", "SELECT city FROM students EXCEPT SELECT location FROM departments;"]
+      ["COUNT", "SELECT COUNT(*) FROM employees;"],
+      ["SUM", "SELECT SUM(quantity) FROM orders;"],
+      ["AVG", "SELECT AVG(salary) FROM employees;"],
+      ["MIN", "SELECT MIN(price) FROM products;"],
+      ["MAX", "SELECT MAX(stock) FROM products;"]
     ]
   },
   {
-    title: "Advanced",
+    title: "Joins in SQL",
     items: [
-      ["CTE", "WITH paid AS (SELECT * FROM orders WHERE status = 'paid') SELECT * FROM paid;"],
-      ["Window", "SELECT name, salary, ROW_NUMBER() OVER (ORDER BY salary DESC) FROM employees;"],
-      ["Index", "CREATE INDEX idx_orders_status ON orders(status);"],
-      ["Plan", "EXPLAIN QUERY PLAN SELECT * FROM orders WHERE status = 'paid';"]
+      ["INNER JOIN", "SELECT employees.name, departments.name FROM employees INNER JOIN departments ON employees.department_id = departments.id;"],
+      ["LEFT JOIN", "SELECT departments.name, employees.name FROM departments LEFT JOIN employees ON employees.department_id = departments.id;"],
+      ["CROSS JOIN", "SELECT employees.name, departments.name FROM employees CROSS JOIN departments;"],
+      ["UNION", "SELECT name FROM students UNION SELECT name FROM customers;"],
+      ["EXCEPT", "SELECT name FROM students EXCEPT SELECT name FROM customers;"]
+    ]
+  },
+  {
+    title: "Indexes & Transactions in SQL",
+    items: [
+      ["CREATE INDEX", "CREATE INDEX idx_department_id ON employees (department_id);"],
+      ["DROP INDEX", "DROP INDEX IF EXISTS idx_department_id;"],
+      ["BEGIN TRANSACTION", "BEGIN TRANSACTION;"],
+      ["COMMIT", "COMMIT;"],
+      ["ROLLBACK", "ROLLBACK;"]
     ]
   }
 ];
