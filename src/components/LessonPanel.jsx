@@ -84,26 +84,41 @@ export default function LessonPanel({ lessons, searchTerm = "", compact = false 
                       >
                         <div className="border-t border-white/10 p-4">
                           <p className="text-sm leading-6 text-slate-300">{lesson.explanation}</p>
-                          <div className="mt-4 grid gap-3 md:grid-cols-2">
-                            <CodeBlock label="Syntax" value={lesson.syntax} />
-                            <div>
-                              <CodeBlock label="Example Query" value={lesson.example} />
-                              {lesson.example && (
-                                <button
-                                  onClick={() => {
-                                    setPendingQuery(lesson.example);
-                                    navigate("/");
-                                  }}
-                                  className="mt-3 rounded-lg border border-sky-300/20 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-100 transition hover:bg-sky-500/20"
-                                >
-                                  Try in Playground
-                                </button>
-                              )}
-                            </div>
-                            <div className="rounded-lg border border-white/10 bg-slate-950/45 p-3">
-                              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-300">Example Output</p>
-                              <p className="mt-2 text-sm leading-6 text-slate-300">{lesson.output}</p>
-                            </div>
+                          <div className="mt-4 grid gap-3">
+                            {(lesson.syntax || lesson.example || lesson.output || lesson.visual) && (
+                              <div className="grid gap-3 md:grid-cols-2">
+                                {lesson.syntax && <CodeBlock label="Syntax" value={lesson.syntax} />}
+
+                                {lesson.example && (
+                                  <div className="space-y-3">
+                                    <CodeBlock label="Example Query" value={lesson.example} />
+                                    <button
+                                      onClick={() => {
+                                        setPendingQuery(lesson.example);
+                                        navigate("/");
+                                      }}
+                                      className="w-full rounded-lg border border-sky-300/20 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-100 transition hover:bg-sky-500/20"
+                                    >
+                                      Try in Playground
+                                    </button>
+                                  </div>
+                                )}
+
+                                {lesson.output && (
+                                  <div className="rounded-lg border border-white/10 bg-slate-950/45 p-3">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-300">Example Output</p>
+                                    <p className="mt-2 text-sm leading-6 text-slate-300">{lesson.output}</p>
+                                  </div>
+                                )}
+
+                                {lesson.visual && (
+                                  <div className="rounded-lg border border-white/10 bg-slate-900/40 p-3">
+                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-300">Visual</p>
+                                    <pre className="mt-2 font-mono text-sm text-slate-200 whitespace-pre-wrap">{lesson.visual}</pre>
+                                  </div>
+                                )}
+                              </div>
+                            )}
                             <div className="rounded-lg border border-violet-300/20 bg-violet-500/10 p-3">
                               <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-violet-200">
                                 <Lightbulb className="h-4 w-4" />
