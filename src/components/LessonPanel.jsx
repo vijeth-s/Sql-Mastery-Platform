@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronDown, Lightbulb } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { usePlayground } from "../context/PlaygroundContext";
 
 export default function LessonPanel({ lessons, searchTerm = "", compact = false }) {
   const [openSection, setOpenSection] = useState("");
   const [openLesson, setOpenLesson] = useState("");
+  const navigate = useNavigate();
+  const { setPendingQuery } = usePlayground();
   const filtered = lessons.filter((lesson) => {
     const text = `${lesson.section || ""} ${lesson.title} ${lesson.explanation} ${lesson.syntax} ${lesson.example}`.toLowerCase();
     return text.includes(searchTerm.toLowerCase());
@@ -82,7 +86,20 @@ export default function LessonPanel({ lessons, searchTerm = "", compact = false 
                           <p className="text-sm leading-6 text-slate-300">{lesson.explanation}</p>
                           <div className="mt-4 grid gap-3 md:grid-cols-2">
                             <CodeBlock label="Syntax" value={lesson.syntax} />
-                            <CodeBlock label="Example Query" value={lesson.example} />
+                            <div>
+                              <CodeBlock label="Example Query" value={lesson.example} />
+                              {lesson.example && (
+                                <button
+                                  onClick={() => {
+                                    setPendingQuery(lesson.example);
+                                    navigate("/");
+                                  }}
+                                  className="mt-3 rounded-lg border border-sky-300/20 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-100 transition hover:bg-sky-500/20"
+                                >
+                                  Try in Playground
+                                </button>
+                              )}
+                            </div>
                             <div className="rounded-lg border border-white/10 bg-slate-950/45 p-3">
                               <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-300">Example Output</p>
                               <p className="mt-2 text-sm leading-6 text-slate-300">{lesson.output}</p>
