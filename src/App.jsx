@@ -11,6 +11,7 @@ import LevelDescriptions from "./components/LevelDescriptions";
 import MobileMenu from "./components/MobileMenu";
 import { lessonsData } from "./data/lessonsData";
 import { createDatabase, tableMetadata } from "./services/database";
+import { PlaygroundProvider } from "./context/PlaygroundContext";
 
 const navItems = [
   { to: "/", label: "Playground", icon: Code2 },
@@ -159,71 +160,73 @@ export default function App() {
   const currentTitle = useMemo(() => navItems.find((item) => item.to === location.pathname)?.label || "Playground", [location.pathname]);
 
   return (
-    <div className="min-h-screen overflow-hidden bg-grid-glow bg-[length:44px_44px] text-slate-100">
-      <div className="flex h-screen">
-        <Sidebar navItems={navItems} />
-        <MobileMenu navItems={navItems} isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <header className="sticky top-0 z-20 border-b border-white/10 bg-ink-950/80 px-4 py-3 backdrop-blur-xl lg:px-6">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setMobileOpen(true)}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 transition hover:border-sky-300/40 hover:text-white lg:hidden"
-                  aria-label="Open navigation"
-                >
-                  <Menu className="h-5 w-5" />
-                </button>
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-300">SQL Mastery Platform</p>
-                  <h1 className="text-lg font-bold text-white md:text-xl">{currentTitle}</h1>
-                </div>
-              </div>
-              <nav className="hidden items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] p-1 xl:flex">
-                {navItems.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    to={item.to}
-                    className={({ isActive }) => `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${isActive ? "bg-sky-400/15 text-sky-100" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}
+    <PlaygroundProvider>
+      <div className="min-h-screen overflow-hidden bg-grid-glow bg-[length:44px_44px] text-slate-100">
+        <div className="flex h-screen">
+          <Sidebar navItems={navItems} />
+          <MobileMenu navItems={navItems} isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <header className="sticky top-0 z-20 border-b border-white/10 bg-ink-950/80 px-4 py-3 backdrop-blur-xl lg:px-6">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setMobileOpen(true)}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 bg-white/5 text-slate-200 transition hover:border-sky-300/40 hover:text-white lg:hidden"
+                    aria-label="Open navigation"
                   >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                  </NavLink>
-                ))}
-              </nav>
-            </div>
-          </header>
-
-          {startupError ? (
-            <main className="flex flex-1 items-center justify-center p-4">
-              <div className="max-w-lg rounded-lg border border-rose-400/30 bg-rose-500/10 p-6 text-center shadow-2xl shadow-black/30">
-                <Database className="mx-auto h-8 w-8 text-rose-200" />
-                <p className="mt-3 text-base font-bold text-white">SQLite could not start</p>
-                <p className="mt-2 text-sm leading-6 text-rose-100/90">{startupError}</p>
-                <button onClick={resetDatabase} className="mt-4 rounded-lg bg-rose-400 px-4 py-2 text-sm font-bold text-slate-950">
-                  Retry
-                </button>
+                    <Menu className="h-5 w-5" />
+                  </button>
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-300">SQL Mastery Platform</p>
+                    <h1 className="text-lg font-bold text-white md:text-xl">{currentTitle}</h1>
+                  </div>
+                </div>
+                <nav className="hidden items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] p-1 xl:flex">
+                  {navItems.map((item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      className={({ isActive }) => `flex items-center gap-2 rounded-md px-3 py-2 text-sm font-medium transition ${isActive ? "bg-sky-400/15 text-sky-100" : "text-slate-300 hover:bg-white/10 hover:text-white"}`}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      {item.label}
+                    </NavLink>
+                  ))}
+                </nav>
               </div>
-            </main>
-          ) : isLoadingDb ? (
-            <div className="flex flex-1 items-center justify-center">
-              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-lg p-6 text-center">
-                <Database className="mx-auto h-8 w-8 text-sky-300" />
-                <p className="mt-3 text-sm font-semibold text-white">Booting SQLite WASM</p>
-                <p className="mt-1 text-xs text-slate-400">Seeding fresh sample tables for this session.</p>
-              </motion.div>
-            </div>
-          ) : (
-            <Routes>
-              <Route path="/" element={<PlaygroundPage db={db} resetDatabase={resetDatabase} refreshKey={refreshKey} onDatabaseChanged={handleDatabaseChanged} tableMetadata={tableMetadataState} />} />
-              <Route path="/beginner" element={<LessonsPage level="beginner" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
-              <Route path="/intermediate" element={<LessonsPage level="intermediate" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
-              <Route path="/advanced" element={<LessonsPage level="advanced" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
-              <Route path="/cheat-sheet" element={<CheatSheet />} />
-            </Routes>
-          )}
+            </header>
+
+            {startupError ? (
+              <main className="flex flex-1 items-center justify-center p-4">
+                <div className="max-w-lg rounded-lg border border-rose-400/30 bg-rose-500/10 p-6 text-center shadow-2xl shadow-black/30">
+                  <Database className="mx-auto h-8 w-8 text-rose-200" />
+                  <p className="mt-3 text-base font-bold text-white">SQLite could not start</p>
+                  <p className="mt-2 text-sm leading-6 text-rose-100/90">{startupError}</p>
+                  <button onClick={resetDatabase} className="mt-4 rounded-lg bg-rose-400 px-4 py-2 text-sm font-bold text-slate-950">
+                    Retry
+                  </button>
+                </div>
+              </main>
+            ) : isLoadingDb ? (
+              <div className="flex flex-1 items-center justify-center">
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="glass rounded-lg p-6 text-center">
+                  <Database className="mx-auto h-8 w-8 text-sky-300" />
+                  <p className="mt-3 text-sm font-semibold text-white">Booting SQLite WASM</p>
+                  <p className="mt-1 text-xs text-slate-400">Seeding fresh sample tables for this session.</p>
+                </motion.div>
+              </div>
+            ) : (
+              <Routes>
+                <Route path="/" element={<PlaygroundPage db={db} resetDatabase={resetDatabase} refreshKey={refreshKey} onDatabaseChanged={handleDatabaseChanged} tableMetadata={tableMetadataState} />} />
+                <Route path="/beginner" element={<LessonsPage level="beginner" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
+                <Route path="/intermediate" element={<LessonsPage level="intermediate" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
+                <Route path="/advanced" element={<LessonsPage level="advanced" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
+                <Route path="/cheat-sheet" element={<CheatSheet />} />
+              </Routes>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </PlaygroundProvider>
   );
 }
