@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ChevronDown, Lightbulb } from "lucide-react";
+import { ChevronDown, Lightbulb, Play } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { usePlayground } from "../context/PlaygroundContext";
 
@@ -97,8 +97,9 @@ export default function LessonPanel({ lessons, searchTerm = "", compact = false 
                                         setPendingQuery(lesson.example);
                                         navigate("/");
                                       }}
-                                      className="w-full rounded-lg border border-sky-300/20 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-100 transition hover:bg-sky-500/20"
+                                      className="inline-flex items-center gap-1.5 rounded-md border border-sky-300/20 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-100 transition hover:bg-sky-500/20"
                                     >
+                                      <Play className="h-3 w-3 fill-sky-200" />
                                       Try in Playground
                                     </button>
                                   </div>
