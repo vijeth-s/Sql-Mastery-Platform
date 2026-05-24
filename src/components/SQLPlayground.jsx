@@ -12,6 +12,13 @@ function pickRandom(arr, n) {
 
 export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) {
   const { pendingQuery, setPendingQuery } = usePlayground();
+  const readStoredList = (key) => {
+    try {
+      return JSON.parse(localStorage.getItem(key) || "[]");
+    } catch {
+      return [];
+    }
+  };
   const [query, setQuery] = useState(sampleQuery);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
@@ -20,6 +27,10 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
   const [visibleSnippets, setVisibleSnippets] = useState(() => pickRandom(sampleQueryBank, 4));
   const [historyOpen, setHistoryOpen] = useState(false);
   const [historyTab, setHistoryTab] = useState("history");
+  const [history, setHistory] = useState(() => readStoredList("sql-query-history"));
+  const [bookmarks, setBookmarks] = useState(() => readStoredList("sql-bookmarks"));
+  const [poppedStarId, setPoppedStarId] = useState(null);
+  const [clearingHistory, setClearingHistory] = useState(false);
 
   useEffect(() => {
     if (pendingQuery) {
@@ -44,7 +55,6 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
   };
 
   const saveToHistory = (query, rowCount) => {
-    const history = JSON.parse(localStorage.getItem("sql-query-history") || "[]");
     const entry = {
       id: Date.now(),
       query,
@@ -53,30 +63,54 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
     };
     const updated = [entry, ...history].slice(0, 50);
     localStorage.setItem("sql-query-history", JSON.stringify(updated));
+    setHistory(updated);
   };
 
-  const getHistory = () => JSON.parse(localStorage.getItem("sql-query-history") || "[]");
-  const getBookmarks = () => JSON.parse(localStorage.getItem("sql-bookmarks") || "[]");
-
   const removeFromHistory = (id) => {
-    const history = getHistory().filter(h => h.id !== id);
-    localStorage.setItem("sql-query-history", JSON.stringify(history));
-    setQuery(query); // trigger re-render
+    const updated = history.filter((entry) => entry.id !== id);
+    localStorage.setItem("sql-query-history", JSON.stringify(updated));
+    setHistory(updated);
   };
 
   const toggleBookmark = (entry) => {
-    const bookmarks = getBookmarks();
-    const idx = bookmarks.findIndex(b => b.id === entry.id);
-    if (idx !== -1) {
-      bookmarks.splice(idx, 1);
-    } else {
-      bookmarks.push(entry);
-    }
-    localStorage.setItem("sql-bookmarks", JSON.stringify(bookmarks));
-    setQuery(query); // trigger re-render
+    const isSaved = bookmarks.some((item) => item.id === entry.id);
+    const updatedBookmarks = isSaved
+      ? bookmarks.filter((item) => item.id !== entry.id)
+      : [entry, ...bookmarks];
+
+    localStorage.setItem("sql-bookmarks", JSON.stringify(updatedBookmarks));
+    setBookmarks(updatedBookmarks);
+    setPoppedStarId(entry.id);
+    window.setTimeout(() => setPoppedStarId(null), 260);
   };
 
-  const isBookmarked = (id) => getBookmarks().some(b => b.id === id);
+  const removeFromSaved = (id) => {
+    const updated = bookmarks.filter((entry) => entry.id !== id);
+    localStorage.setItem("sql-bookmarks", JSON.stringify(updated));
+    setBookmarks(updated);
+  };
+
+  const clearAllHistory = () => {
+    if (window.confirm("Clear all query history? This cannot be undone.")) {
+      localStorage.setItem("sql-query-history", JSON.stringify([]));
+      setClearingHistory(true);
+      window.setTimeout(() => setHistory([]), 0);
+    }
+  };
+
+  const isBookmarked = (id) => bookmarks.some((entry) => entry.id === id);
+
+  const historyCardExit = {
+    opacity: 0,
+    x: 360,
+    transition: { duration: 0.22, ease: "easeIn" }
+  };
+
+  const staggeredHistoryExit = (index) => ({
+    opacity: 0,
+    x: 360,
+    transition: { duration: 0.22, delay: index * 0.15, ease: "easeIn" }
+  });
 
   const runQuery = () => {
     try {
@@ -228,12 +262,24 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
           >
             <div className="flex items-center justify-between border-b border-white/10 p-4">
               <h3 className="text-lg font-bold text-white">Queries</h3>
-              <button
-                onClick={() => setHistoryOpen(false)}
-                className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-slate-400 hover:text-white"
-              >
-                ✕
-              </button>
+              <div className="flex items-center gap-2">
+                {historyTab === "history" && history.length > 0 && (
+                  <button
+                    onClick={clearAllHistory}
+                    className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-2 py-1 text-xs font-semibold text-rose-300 transition hover:bg-rose-500/20"
+                    title="Clear all history"
+                  >
+                    <Trash2 className="h-3 w-3 inline mr-1" />
+                    Clear History
+                  </button>
+                )}
+                <button
+                  onClick={() => setHistoryOpen(false)}
+                  className="rounded-lg border border-white/10 bg-white/5 px-2 py-1 text-xs font-semibold text-slate-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
             </div>
 
             <div className="flex gap-1 border-b border-white/10 bg-slate-950/50 p-2">
@@ -261,90 +307,110 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2 p-3">
-              {historyTab === "history" && getHistory().length === 0 && (
+              {historyTab === "history" && history.length === 0 && !clearingHistory && (
                 <p className="text-xs text-slate-400 p-2 text-center">No queries yet</p>
               )}
-              {historyTab === "bookmarks" && getBookmarks().length === 0 && (
+              {historyTab === "bookmarks" && bookmarks.length === 0 && (
                 <p className="text-xs text-slate-400 p-2 text-center">No bookmarks yet</p>
               )}
 
-              {historyTab === "history" &&
-                getHistory().map((entry) => {
-                  const date = new Date(entry.timestamp);
-                  const formatted = date.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-                  const truncated = entry.query.substring(0, 60) + (entry.query.length > 60 ? "…" : "");
-                  return (
-                    <div key={entry.id} className="rounded-lg border border-white/10 bg-slate-950/60 p-2 text-xs space-y-1.5">
-                      <p className="text-slate-300 font-mono leading-4">{truncated}</p>
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-slate-500">{formatted}</span>
-                        <span className="px-1.5 py-0.5 bg-sky-400/20 text-sky-200 rounded text-xs font-mono">{entry.rowCount} rows</span>
-                      </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => setQuery(entry.query)}
-                          className="flex-1 rounded px-2 py-1 text-xs font-semibold bg-sky-400/20 text-sky-200 hover:bg-sky-400/30 transition"
-                          title="Load this query"
-                        >
-                          <Copy className="h-3 w-3 inline mr-1" />
-                          Load
-                        </button>
-                        <button
-                          onClick={() => toggleBookmark(entry)}
-                          className={`px-2 py-1 rounded transition ${
-                            isBookmarked(entry.id)
-                              ? "bg-amber-400/20 text-amber-200 hover:bg-amber-400/30"
-                              : "bg-slate-700/50 text-slate-400 hover:bg-slate-600/50"
-                          }`}
-                          title={isBookmarked(entry.id) ? "Remove bookmark" : "Add bookmark"}
-                        >
-                          <Star className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={() => removeFromHistory(entry.id)}
-                          className="px-2 py-1 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition"
-                          title="Remove from history"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+              <AnimatePresence onExitComplete={() => setClearingHistory(false)}>
+                {historyTab === "history" &&
+                  history.map((entry, index) => {
+                    const saved = isBookmarked(entry.id);
+                    const date = new Date(entry.timestamp);
+                    const formatted = date.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+                    const truncated = entry.query.substring(0, 60) + (entry.query.length > 60 ? "..." : "");
+                    return (
+                      <motion.div
+                        key={entry.id}
+                        exit={clearingHistory ? staggeredHistoryExit(index) : historyCardExit}
+                        className="rounded-lg border border-white/10 bg-slate-950/60 p-2 text-xs space-y-1.5"
+                      >
+                        <p className="text-slate-300 font-mono leading-4">{truncated}</p>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-slate-500">{formatted}</span>
+                          <span className="px-1.5 py-0.5 bg-sky-400/20 text-sky-200 rounded text-xs font-mono">{entry.rowCount} rows</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setQuery(entry.query)}
+                            className="flex-1 rounded px-2 py-1 text-xs font-semibold bg-sky-400/20 text-sky-200 hover:bg-sky-400/30 transition"
+                            title="Load this query"
+                          >
+                            <Copy className="h-3 w-3 inline mr-1" />
+                            Load
+                          </button>
+                          <button
+                            onClick={() => toggleBookmark(entry)}
+                            className={`px-2 py-1 rounded border transition ${
+                              saved
+                                ? "border-amber-300/25 bg-amber-300/15 text-amber-300 hover:bg-amber-300/25 hover:text-amber-200"
+                                : "border-white/10 bg-slate-700/50 text-slate-400 hover:bg-slate-600/50 hover:text-amber-300"
+                            }`}
+                            title={saved ? "Remove from saved" : "Add to saved"}
+                          >
+                            <motion.span
+                              className="inline-flex"
+                              animate={poppedStarId === entry.id ? { y: [0, -6, 0], scale: [1, 1.3, 1] } : { y: 0, scale: 1 }}
+                              transition={{ duration: 0.24, ease: "easeOut" }}
+                            >
+                              <Star className="h-3 w-3" fill={saved ? "currentColor" : "none"} />
+                            </motion.span>
+                          </button>
+                          <button
+                            onClick={() => removeFromHistory(entry.id)}
+                            className="px-2 py-1 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition"
+                            title="Remove from history"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+              </AnimatePresence>
 
-              {historyTab === "bookmarks" &&
-                getBookmarks().map((entry) => {
-                  const date = new Date(entry.timestamp);
-                  const formatted = date.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
-                  const truncated = entry.query.substring(0, 60) + (entry.query.length > 60 ? "…" : "");
-                  return (
-                    <div key={entry.id} className="rounded-lg border border-white/10 bg-slate-950/60 p-2 text-xs space-y-1.5">
-                      <p className="text-slate-300 font-mono leading-4">{truncated}</p>
-                      <div className="flex items-center justify-between gap-1">
-                        <span className="text-slate-500">{formatted}</span>
-                        <span className="px-1.5 py-0.5 bg-sky-400/20 text-sky-200 rounded text-xs font-mono">{entry.rowCount} rows</span>
-                      </div>
-                      <div className="flex gap-1">
-                        <button
-                          onClick={() => setQuery(entry.query)}
-                          className="flex-1 rounded px-2 py-1 text-xs font-semibold bg-sky-400/20 text-sky-200 hover:bg-sky-400/30 transition"
-                          title="Load this query"
-                        >
-                          <Copy className="h-3 w-3 inline mr-1" />
-                          Load
-                        </button>
-                        <button
-                          onClick={() => toggleBookmark(entry)}
-                          className="px-2 py-1 rounded bg-amber-400/20 text-amber-200 hover:bg-amber-400/30 transition"
-                          title="Remove bookmark"
-                        >
-                          <Trash2 className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
+              <AnimatePresence>
+                {historyTab === "bookmarks" &&
+                  bookmarks.map((entry) => {
+                    const date = new Date(entry.timestamp);
+                    const formatted = date.toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+                    const truncated = entry.query.substring(0, 60) + (entry.query.length > 60 ? "..." : "");
+                    return (
+                      <motion.div
+                        key={entry.id}
+                        exit={historyCardExit}
+                        className="rounded-lg border border-white/10 bg-slate-950/60 p-2 text-xs space-y-1.5"
+                      >
+                        <p className="text-slate-300 font-mono leading-4">{truncated}</p>
+                        <div className="flex items-center justify-between gap-1">
+                          <span className="text-slate-500">{formatted}</span>
+                          <span className="px-1.5 py-0.5 bg-sky-400/20 text-sky-200 rounded text-xs font-mono">{entry.rowCount} rows</span>
+                        </div>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => setQuery(entry.query)}
+                            className="flex-1 rounded px-2 py-1 text-xs font-semibold bg-sky-400/20 text-sky-200 hover:bg-sky-400/30 transition"
+                            title="Load this query"
+                          >
+                            <Copy className="h-3 w-3 inline mr-1" />
+                            Load
+                          </button>
+                          <button
+                            onClick={() => removeFromSaved(entry.id)}
+                            className="px-2 py-1 rounded bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition"
+                            title="Remove from saved"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+              </AnimatePresence>
             </div>
+
           </motion.div>
         )}
       </AnimatePresence>
