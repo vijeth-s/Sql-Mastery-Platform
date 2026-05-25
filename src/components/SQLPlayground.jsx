@@ -1,14 +1,93 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import CodeMirror from "@uiw/react-codemirror";
+import { sql, SQLite } from "@codemirror/lang-sql";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { EditorView } from "@codemirror/view";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
 import { Play, RotateCcw, Wand2, Shuffle, Clock, Star, Trash2, Copy } from "lucide-react";
 import QueryResults from "./QueryResults";
-import { executeQuery, sampleQuery } from "../services/database";
+import { executeQuery, sampleQuery, tableMetadata } from "../services/database";
 import { sampleQueryBank } from "../data/sampleQueries";
 import { usePlayground } from "../context/PlaygroundContext";
 
 function pickRandom(arr, n) {
   return [...arr].sort(() => Math.random() - 0.5).slice(0, n);
 }
+
+function splitLeadingComments(sqlText) {
+  const lines = sqlText.replace(/\r\n/g, "\n").split("\n");
+  const comments = [];
+  let bodyStart = 0;
+
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index];
+    if (line.trim() === "" && comments.length === 0) {
+      bodyStart = index + 1;
+      continue;
+    }
+    if (line.trim().startsWith("--")) {
+      comments.push(line.trim());
+      bodyStart = index + 1;
+      continue;
+    }
+    break;
+  }
+
+  return {
+    comments: comments.join("\n"),
+    body: lines.slice(bodyStart).join("\n").trim()
+  };
+}
+
+function formatSqlBody(sqlText) {
+  const compactSql = sqlText
+    .trim()
+    .replace(/\s+/g, " ");
+
+  const createTableMatch = compactSql.match(/^(CREATE\s+TABLE(?:\s+IF\s+NOT\s+EXISTS)?\s+[^(]+)\((.*)\)\s*;?$/i);
+  if (createTableMatch) {
+    const [, statementStart, columnList] = createTableMatch;
+    const columns = columnList.split(",").map((column) => column.trim()).filter(Boolean);
+    return `${statementStart.trim()} (\n${columns.map((column, index) => `${column}${index < columns.length - 1 ? "," : ""}`).join("\n")}\n);`;
+  }
+
+  return compactSql
+    .replace(/\bWHERE\b/gi, "\nWHERE")
+    .replace(/\bGROUP\s+BY\b/gi, "\nGROUP BY")
+    .replace(/\bHAVING\b/gi, "\nHAVING")
+    .replace(/\bORDER\s+BY\b/gi, "\nORDER BY")
+    .replace(/\bLIMIT\b/gi, "\nLIMIT")
+    .replace(/\bINNER\s+JOIN\b/gi, "\nINNER JOIN")
+    .replace(/\bLEFT\s+JOIN\b/gi, "\nLEFT JOIN")
+    .replace(/\bJOIN\b/gi, "\nJOIN")
+    .replace(/\bON\b/gi, "\n  ON")
+    .replace(/\bSELECT\b/gi, "SELECT\n")
+    .replace(/\n+/g, "\n")
+    .replace(/;\s*$/, ";");
+}
+
+function formatSqlForEditor(sqlText) {
+  const { comments, body } = splitLeadingComments(sqlText);
+  const formattedBody = body ? formatSqlBody(body) : "";
+  return [comments, formattedBody].filter(Boolean).join("\n");
+}
+
+const schemaHint = Object.fromEntries(tableMetadata.map((table) => [table.name, []]));
+
+const sqlHighlightStyle = HighlightStyle.define([
+  { tag: tags.keyword, color: "#c084fc", fontWeight: "700" },
+  { tag: tags.operatorKeyword, color: "#c084fc", fontWeight: "700" },
+  { tag: tags.string, color: "#86efac" },
+  { tag: tags.number, color: "#fbbf24" },
+  { tag: tags.operator, color: "#fb7185" },
+  { tag: tags.comment, color: "#94a3b8", fontStyle: "italic" },
+  { tag: tags.variableName, color: "#e0f2fe" },
+  { tag: tags.definition(tags.variableName), color: "#38bdf8" },
+  { tag: tags.function(tags.variableName), color: "#67e8f9" },
+  { tag: tags.punctuation, color: "#cbd5e1" }
+]);
 
 export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) {
   const { pendingQuery, setPendingQuery } = usePlayground();
@@ -19,7 +98,7 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
       return [];
     }
   };
-  const [query, setQuery] = useState(sampleQuery);
+  const [query, setQuery] = useState(() => formatSqlForEditor(sampleQuery));
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [elapsedMs, setElapsedMs] = useState("0.00");
@@ -32,9 +111,14 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
   const [poppedStarId, setPoppedStarId] = useState(null);
   const [clearingHistory, setClearingHistory] = useState(false);
 
+  const loadQuery = (nextQuery) => {
+    const { comments } = splitLeadingComments(query);
+    setQuery(formatSqlForEditor([comments, nextQuery].filter(Boolean).join("\n")));
+  };
+
   useEffect(() => {
     if (pendingQuery) {
-      setQuery(pendingQuery);
+      loadQuery(pendingQuery);
       setPendingQuery("");
     }
   }, [pendingQuery, setPendingQuery]);
@@ -188,11 +272,13 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
             <span className="h-3 w-3 rounded-full bg-emerald-400" />
             <span className="ml-2 font-mono text-xs text-slate-400">query.sql</span>
           </div>
-          <textarea
+          <CodeMirror
             value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            spellCheck="false"
-            className="h-[24rem] w-full resize-none bg-transparent p-4 font-mono text-sm leading-6 text-sky-50 outline-none scrollbar-thin selection:bg-sky-400/30"
+            onChange={(value) => setQuery(value)}
+            extensions={[sql({ dialect: SQLite, schema: schemaHint, upperCaseKeywords: true }), syntaxHighlighting(sqlHighlightStyle), EditorView.lineWrapping]}
+            theme={oneDark}
+            className="h-[24rem] overflow-auto rounded-b-lg font-mono text-sm"
+            basicSetup={{ lineNumbers: true, bracketMatching: true, autocompletion: true }}
           />
         </div>
 
@@ -223,7 +309,7 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
               {visibleSnippets.map((snippet) => (
                 <button
                   key={snippet}
-                  onClick={() => setQuery(snippet)}
+                  onClick={() => loadQuery(snippet)}
                   className="w-full rounded-lg border border-white/10 bg-slate-950/50 p-3 text-left font-mono text-xs leading-5 text-slate-300 transition hover:border-sky-300/40 hover:bg-sky-400/10 hover:text-sky-100"
                 >
                   {snippet}
@@ -334,7 +420,7 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
                         </div>
                         <div className="flex gap-1">
                           <button
-                            onClick={() => setQuery(entry.query)}
+                            onClick={() => loadQuery(entry.query)}
                             className="flex-1 rounded px-2 py-1 text-xs font-semibold bg-sky-400/20 text-sky-200 hover:bg-sky-400/30 transition"
                             title="Load this query"
                           >
@@ -390,7 +476,7 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
                         </div>
                         <div className="flex gap-1">
                           <button
-                            onClick={() => setQuery(entry.query)}
+                            onClick={() => loadQuery(entry.query)}
                             className="flex-1 rounded px-2 py-1 text-xs font-semibold bg-sky-400/20 text-sky-200 hover:bg-sky-400/30 transition"
                             title="Load this query"
                           >
