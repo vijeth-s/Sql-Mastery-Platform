@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { BookOpen, Code2, Database, FileCode2, GraduationCap, Menu, Search, Sparkles } from "lucide-react";
+import { BookOpen, Code2, Database, FileCode2, GraduationCap, Menu, Search, Sparkles, Trophy } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import SQLPlayground from "./components/SQLPlayground";
 import LessonPanel from "./components/LessonPanel";
 import CheatSheet from "./components/CheatSheet";
+import Challenges from "./components/Challenges";
 import TablePreview from "./components/TablePreview";
 import LevelDescriptions from "./components/LevelDescriptions";
 import MobileMenu from "./components/MobileMenu";
@@ -18,6 +19,7 @@ const navItems = [
   { to: "/beginner", label: "Beginner", icon: BookOpen },
   { to: "/intermediate", label: "Intermediate", icon: GraduationCap },
   { to: "/advanced", label: "Advanced", icon: Sparkles },
+  { to: "/challenges", label: "Challenges", icon: Trophy },
   { to: "/cheat-sheet", label: "Cheat Sheet", icon: FileCode2 }
 ];
 
@@ -221,6 +223,7 @@ export default function App() {
                 <Route path="/beginner" element={<LessonsPage level="beginner" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
                 <Route path="/intermediate" element={<LessonsPage level="intermediate" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
                 <Route path="/advanced" element={<LessonsPage level="advanced" searchTerm={searchTerm} setSearchTerm={setSearchTerm} />} />
+                <Route path="/challenges" element={<Challenges db={db} />} />
                 <Route path="/cheat-sheet" element={<CheatSheet />} />
               </Routes>
             )}
