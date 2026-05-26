@@ -5,6 +5,7 @@ import { useState } from "react";
 export default function Sidebar({ navItems }) {
   const [openLessons, setOpenLessons] = useState(true);
   const lessonPaths = ["/beginner", "/intermediate", "/advanced"];
+  const secondaryItems = navItems.filter((item) => item.to !== "/" && !lessonPaths.includes(item.to));
 
   return (
     <aside className="hidden w-64 shrink-0 border-r border-white/10 bg-ink-950/70 p-4 backdrop-blur-xl lg:block">
@@ -49,13 +50,12 @@ export default function Sidebar({ navItems }) {
           </div>
         )}
 
-        <NavLink to="/cheat-sheet" className={({ isActive }) => `nav-link ${isActive ? "nav-link-active" : ""}`}>
-          {(() => {
-            const Icon = navItems[4].icon;
-            return <Icon className="h-4 w-4" />;
-          })()}
-          Cheat Sheet
-        </NavLink>
+        {secondaryItems.map((item) => (
+          <NavLink key={item.to} to={item.to} className={({ isActive }) => `nav-link ${isActive ? "nav-link-active" : ""}`}>
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
 
       <div className="mt-6 rounded-lg border border-sky-300/20 bg-sky-400/10 p-4">
