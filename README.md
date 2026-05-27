@@ -130,8 +130,8 @@ The optimized build output appears in `dist/`.
 
 - Add authentication or user progress tracking
 - Add more sample lessons and query challenges
-- Support saving custom queries in local storage
-- Add test coverage for core components
+- Support saving custom queries in local storage.
+- Add test coverage for core components.
 
 ---
 
