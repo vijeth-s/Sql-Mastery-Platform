@@ -1,12 +1,33 @@
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import CodeMirror from "@uiw/react-codemirror";
+import { sql, SQLite } from "@codemirror/lang-sql";
+import { oneDark } from "@codemirror/theme-one-dark";
+import { EditorView } from "@codemirror/view";
+import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
+import { tags } from "@lezer/highlight";
 import {
   ArrowLeft, Award, CheckCircle2, Eye, Lightbulb,
   Medal, Play, Shield, Sparkles, Star, Target, Trophy, X, Zap,
   ChevronRight
 } from "lucide-react";
 import { challengeTiers } from "../data/challengesData";
-import { executeQuery } from "../services/database";
+import { executeQuery, tableMetadata } from "../services/database";
+
+const schemaHint = Object.fromEntries(tableMetadata.map((table) => [table.name, []]));
+
+const sqlHighlightStyle = HighlightStyle.define([
+  { tag: tags.keyword, color: "#c084fc", fontWeight: "700" },
+  { tag: tags.operatorKeyword, color: "#c084fc", fontWeight: "700" },
+  { tag: tags.string, color: "#86efac" },
+  { tag: tags.number, color: "#fbbf24" },
+  { tag: tags.operator, color: "#fb7185" },
+  { tag: tags.comment, color: "#94a3b8", fontStyle: "italic" },
+  { tag: tags.variableName, color: "#e0f2fe" },
+  { tag: tags.definition(tags.variableName), color: "#38bdf8" },
+  { tag: tags.function(tags.variableName), color: "#67e8f9" },
+  { tag: tags.punctuation, color: "#cbd5e1" }
+]);
 
 // ==================== Gamification Constants ====================
 
@@ -303,7 +324,7 @@ function TierCard({ tier, solvedCount, xpEarned, percent, onSelect }) {
   );
 }
 
-function QuestionGrid({ challenges, selectedId, onSelect, solvedSet, attemptCounts, feedbacks }) {
+function QuestionGrid({ challenges, selectedId, onSelect, solvedSet, attemptCounts, feedbacks, perfectSolveIds }) {
   return (
     <div className="mt-4">
       <div className="mb-3 flex items-center justify-between gap-2">
@@ -317,7 +338,7 @@ function QuestionGrid({ challenges, selectedId, onSelect, solvedSet, attemptCoun
           const isSolved = solvedSet.has(challenge.id);
           const hasAttempts = (attemptCounts[challenge.id] || 0) > 0 || feedbacks[challenge.id]?.type === "error";
           const isSelected = selectedId === challenge.id;
-          const isPerfect = isSolved && (attemptCounts[challenge.id] || 0) === 0;
+          const isPerfect = isSolved && perfectSolveIds.includes(challenge.id);
 
           let statusClass, statusIcon;
           if (isSolved) {
@@ -398,7 +419,7 @@ function ExpectedOutput({ challenge }) {
   );
 }
 
-function XpNotification({ xpGained, achievements }) {
+function XpNotification({ xpGained, achievements, reasons }) {
   if (xpGained <= 0) return null;
 
   return (
@@ -411,18 +432,29 @@ function XpNotification({ xpGained, achievements }) {
         transition={{ type: "spring", stiffness: 300, damping: 20 }}
       >
         <motion.div
-          className="rounded-xl border border-sky-300/20 bg-slate-900 px-5 py-4 shadow-2xl shadow-sky-500/10 backdrop-blur-xl"
+          className="min-w-[240px] rounded-xl border border-sky-300/20 bg-slate-900 px-5 py-4 shadow-2xl shadow-sky-500/10 backdrop-blur-xl"
           initial={{ x: 50, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
         >
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-violet-500 shadow-lg">
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-sky-400 to-violet-500 shadow-lg">
               <Zap className="h-6 w-6 fill-white text-white" />
             </div>
             <div>
               <p className="text-lg font-black text-white">+{xpGained} XP</p>
             </div>
           </div>
+
+          {reasons.length > 0 && (
+            <div className="mt-3 space-y-1.5 border-t border-white/10 pt-3">
+              {reasons.map((r, i) => (
+                <div key={i} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-slate-300">{r.label}</span>
+                  <span className="font-bold text-sky-200">+{r.xp} XP</span>
+                </div>
+              ))}
+            </div>
+          )}
 
           {achievements.length > 0 && (
             <div className="mt-3 space-y-2 border-t border-white/10 pt-3">
@@ -453,8 +485,17 @@ export default function Challenges({ db }) {
   const [solvedIds, setSolvedIds] = useState(readSolvedIds);
   const [progress, setProgress] = useState(readProgress);
   const [celebrationTier, setCelebrationTier] = useState(null);
-  const [xpNotification, setXpNotification] = useState({ xp: 0, achievements: [] });
+  const [xpNotification, setXpNotification] = useState({ xp: 0, achievements: [], reasons: [] });
   const [notifKey, setNotifKey] = useState(0);
+
+  // Auto-dismiss XP notification after 1.5s
+  useEffect(() => {
+    if (xpNotification.xp <= 0) return;
+    const timer = setTimeout(() => {
+      setXpNotification({ xp: 0, achievements: [] });
+    }, 1500);
+    return () => clearTimeout(timer);
+  }, [xpNotification.xp, notifKey]);
 
   const allChallenges = useMemo(() => challengeTiers.flatMap((tier) => tier.challenges), []);
   const selectedTier = challengeTiers.find((tier) => tier.id === selectedTierId);
@@ -541,8 +582,19 @@ export default function Challenges({ db }) {
     writeProgress(newProgress);
     setProgress(newProgress);
 
+    // Build reasons breakdown
+    const reasons = [];
+    const diffLabel = challenge.difficulty === "Hard" ? "Hard" : challenge.difficulty === "Normal" ? "Normal" : "Easy";
+    reasons.push({ label: `Solved ${diffLabel} Challenge`, xp: baseXp });
+    if (perfectBonus > 0) {
+      reasons.push({ label: "Perfect Bonus", xp: perfectBonus });
+    }
+    if (tierBonus > 0) {
+      reasons.push({ label: `Tier Complete: ${tier.label}`, xp: tierBonus });
+    }
+
     // Show notification
-    setXpNotification({ xp: totalXpGain, achievements: newlyUnlocked });
+    setXpNotification({ xp: totalXpGain, achievements: newlyUnlocked, reasons });
     setNotifKey((k) => k + 1);
   }, [solvedSet, solvedIds, progress]);
 
@@ -656,6 +708,7 @@ export default function Challenges({ db }) {
                 solvedSet={solvedSet}
                 attemptCounts={attempts}
                 feedbacks={feedback}
+                perfectSolveIds={progress.perfectSolveIds || []}
               />
             </section>
 
@@ -723,7 +776,7 @@ export default function Challenges({ db }) {
                       <label className="text-sm font-bold text-white">Your SQL</label>
                       <div className="flex items-center gap-3 text-xs">
                         <span className="text-slate-400">{attempts[selectedChallenge.id] || 0} failed attempts</span>
-                        {solvedSet.has(selectedChallenge.id) && attempts[selectedChallenge.id] === 0 && (
+                        {solvedSet.has(selectedChallenge.id) && (progress.perfectSolveIds || []).includes(selectedChallenge.id) && (
                           <span className="flex items-center gap-1 font-semibold text-emerald-300">
                             <Sparkles className="h-3 w-3" />
                             Perfect!
@@ -731,13 +784,22 @@ export default function Challenges({ db }) {
                         )}
                       </div>
                     </div>
-                    <textarea
-                      value={queries[selectedChallenge.id] || ""}
-                      onChange={(e) => updateQuery(selectedChallenge.id, e.target.value)}
-                      spellCheck="false"
-                      className="h-40 w-full resize-none rounded-lg border border-white/10 bg-slate-950/70 p-4 font-mono text-sm leading-6 text-sky-50 outline-none transition focus:border-sky-300/60 focus:ring-2 focus:ring-sky-400/20"
-                      placeholder="Write your SQL answer here..."
-                    />
+                    <div className="overflow-hidden rounded-lg border border-white/10 editor-shell">
+                      <div className="flex items-center gap-2 border-b border-white/10 bg-slate-950/70 px-4 py-2">
+                        <span className="h-3 w-3 rounded-full bg-rose-400" />
+                        <span className="h-3 w-3 rounded-full bg-amber-300" />
+                        <span className="h-3 w-3 rounded-full bg-emerald-400" />
+                        <span className="ml-2 font-mono text-xs text-slate-400">answer.sql</span>
+                      </div>
+                      <CodeMirror
+                        value={queries[selectedChallenge.id] || ""}
+                        onChange={(value) => updateQuery(selectedChallenge.id, value)}
+                        extensions={[sql({ dialect: SQLite, schema: schemaHint, upperCaseKeywords: true }), syntaxHighlighting(sqlHighlightStyle), EditorView.lineWrapping]}
+                        theme={oneDark}
+                        className="h-40 overflow-auto font-mono text-sm"
+                        basicSetup={{ lineNumbers: true, bracketMatching: true, autocompletion: true }}
+                      />
+                    </div>
                   </div>
 
                   {/* Feedback */}
@@ -801,6 +863,7 @@ export default function Challenges({ db }) {
         key={notifKey}
         xpGained={xpNotification.xp}
         achievements={xpNotification.achievements}
+        reasons={xpNotification.reasons || []}
       />
 
       {/* Celebration Modal */}
