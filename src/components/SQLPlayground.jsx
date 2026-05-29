@@ -90,7 +90,7 @@ const sqlHighlightStyle = HighlightStyle.define([
 ]);
 
 export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) {
-  const { pendingQuery, setPendingQuery } = usePlayground();
+  const { pendingQuery, setPendingQuery, runQueryRef, toggleHistoryRef } = usePlayground();
   const readStoredList = (key) => {
     try {
       return JSON.parse(localStorage.getItem(key) || "[]");
@@ -197,6 +197,21 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
   });
 
   const runQuery = () => {
+    // Track query run count
+    try {
+      const count = parseInt(localStorage.getItem("sql-queries-run") || "0", 10);
+      localStorage.setItem("sql-queries-run", String(count + 1));
+    } catch { /* ignore */ }
+
+    // Track streak date (YYYY-MM-DD)
+    try {
+      const today = new Date().toISOString().slice(0, 10);
+      const dates = JSON.parse(localStorage.getItem("sql-streak-dates") || "[]");
+      if (!dates.includes(today)) {
+        dates.push(today);
+        localStorage.setItem("sql-streak-dates", JSON.stringify(dates));
+      }
+    } catch { /* ignore */ }
     try {
       const response = executeQuery(db, query);
       setResult(response.results[0] || { columns: [], values: [] });
@@ -230,6 +245,11 @@ export default function SQLPlayground({ db, resetDatabase, onDatabaseChanged }) 
     setRowsChanged(0);
     setElapsedMs("0.00");
   };
+
+  useEffect(() => {
+    runQueryRef.current = runQuery;
+    toggleHistoryRef.current = () => setHistoryOpen((prev) => !prev);
+  }, [runQuery, runQueryRef, toggleHistoryRef]);
 
   const randomizeSnippets = () => {
     setVisibleSnippets((prev) => {
