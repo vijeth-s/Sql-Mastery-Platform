@@ -61,7 +61,23 @@ export default function LessonPanel({ lessons, searchTerm = "", compact = false 
                   className="overflow-hidden rounded-lg border border-white/10 bg-white/[0.055] shadow-xl shadow-black/10 transition hover:border-sky-300/30"
                 >
                   <button
-                    onClick={() => !compact && setOpenLesson((current) => (current === lessonId ? "" : lessonId))}
+                    onClick={() => {
+                      if (!compact) {
+                        const next = openLesson === lessonId ? "" : lessonId;
+                        setOpenLesson(next);
+                        // Track lesson as read
+                        if (next && lesson.title && lesson.section) {
+                          try {
+                            const key = lesson.section + "|" + lesson.title;
+                            const existing = JSON.parse(localStorage.getItem("sql-lessons-read") || "[]");
+                            if (!existing.includes(key)) {
+                              existing.push(key);
+                              localStorage.setItem("sql-lessons-read", JSON.stringify(existing));
+                            }
+                          } catch { /* ignore */ }
+                        }
+                      }
+                    }}
                     className="flex w-full items-center justify-between gap-3 p-4 text-left transition hover:bg-white/[0.04]"
                     aria-expanded={compact || openLesson === lessonId}
                   >
