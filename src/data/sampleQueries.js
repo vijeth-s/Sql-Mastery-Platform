@@ -44,5 +44,20 @@ export const sampleQueryBank = [
   "SELECT customers.region, AVG(products.price * orders.quantity) AS avg_order_value FROM orders JOIN customers ON customers.id = orders.customer_id JOIN products ON products.id = orders.product_id GROUP BY customers.region;",
   "WITH order_totals AS (SELECT customer_id, SUM(quantity * price) AS total FROM orders JOIN products ON products.id = orders.product_id GROUP BY customer_id) SELECT customers.name, order_totals.total FROM order_totals JOIN customers ON customers.id = order_totals.customer_id ORDER BY total DESC;",
   "SELECT department_id, COUNT(*) AS employees_count, MIN(salary) AS min_salary, MAX(salary) AS max_salary FROM employees GROUP BY department_id;",
-  "SELECT strftime('%Y', joined_at) AS year_joined, COUNT(*) AS new_customers FROM customers GROUP BY year_joined ORDER BY year_joined;"
+  "SELECT strftime('%Y', joined_at) AS year_joined, COUNT(*) AS new_customers FROM customers GROUP BY year_joined ORDER BY year_joined;",
+  "SELECT products.name, products.price, products.category FROM products WHERE category = 'Software' ORDER BY price DESC;",
+  "SELECT students.name, students.gpa, students.grade FROM students WHERE students.grade IN ('A', 'B') ORDER BY students.gpa DESC;",
+  "SELECT employees.name, employees.role, departments.name AS department FROM employees JOIN departments ON departments.id = employees.department_id ORDER BY departments.name;",
+  "SELECT customers.name, customers.region, COUNT(orders.id) AS order_count FROM customers LEFT JOIN orders ON customers.id = orders.customer_id GROUP BY customers.name ORDER BY order_count DESC;",
+  "SELECT products.category, ROUND(MAX(products.price), 2) AS most_expensive, ROUND(MIN(products.price), 2) AS cheapest FROM products GROUP BY products.category;",
+  "SELECT name, salary FROM employees WHERE department_id IN (1, 6) ORDER BY salary DESC;",
+  "SELECT orders.status, orders.order_date, COUNT(*) AS daily_count FROM orders GROUP BY orders.status, orders.order_date ORDER BY orders.order_date;",
+  "SELECT departments.name AS department, departments.budget, ROUND(AVG(employees.salary), 2) AS avg_salary FROM departments LEFT JOIN employees ON departments.id = employees.department_id GROUP BY departments.name;",
+  "SELECT employees.name, employees.salary, CASE WHEN employees.salary > departments.budget / (SELECT COUNT(*) FROM employees WHERE department_id = departments.id) THEN 'Above dept avg' ELSE 'At or below dept avg' END AS salary_comparison FROM employees JOIN departments ON departments.id = employees.department_id;",
+  "WITH product_sales AS (SELECT products.name, SUM(orders.quantity) AS total_sold FROM products JOIN orders ON products.id = orders.product_id GROUP BY products.name) SELECT * FROM product_sales WHERE total_sold > 10 ORDER BY total_sold DESC;",
+  "SELECT students.name, students.city, students.gpa, RANK() OVER (PARTITION BY students.city ORDER BY students.gpa DESC) AS city_rank FROM students;",
+  "SELECT customers.region, COUNT(DISTINCT customers.id) AS customer_count, ROUND(SUM(orders.quantity * products.price), 2) AS total_revenue FROM customers JOIN orders ON customers.id = orders.customer_id JOIN products ON products.id = orders.product_id GROUP BY customers.region ORDER BY total_revenue DESC;",
+  "SELECT employees.name, employees.role, departments.name AS department, ROW_NUMBER() OVER (PARTITION BY employees.department_id ORDER BY employees.salary DESC) AS role_salary_rank FROM employees JOIN departments ON departments.id = employees.department_id;",
+  "SELECT products.name, products.price, products.stock, products.price * products.stock AS inventory_value FROM products ORDER BY inventory_value DESC;",
+  "SELECT DISTINCT city FROM students WHERE city NOT IN (SELECT DISTINCT location FROM departments) ORDER BY city;"
 ];

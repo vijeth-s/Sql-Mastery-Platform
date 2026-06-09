@@ -951,6 +951,8 @@ export const lessonsData = {
   advanced: buildLessons("advanced")
 };
 
+const dialectItem = (label, variants) => [label, variants];
+
 export const cheatSheetSections = [
   {
     title: "Querying Data in SQL",
@@ -958,8 +960,16 @@ export const cheatSheetSections = [
       ["SELECT", "SELECT * FROM employees;"],
       ["DISTINCT", "SELECT DISTINCT region FROM customers;"],
       ["WHERE", "SELECT * FROM employees WHERE salary > 55000;"],
-      ["LIMIT", "SELECT * FROM employees LIMIT 3;"],
-      ["FETCH", "SELECT * FROM employees FETCH FIRST 3 ROWS ONLY;"]
+      dialectItem("LIMIT", {
+        sqlite: "SELECT * FROM employees LIMIT 3;",
+        postgres: "SELECT * FROM employees FETCH FIRST 3 ROWS ONLY;",
+        mysql: "SELECT * FROM employees LIMIT 3;"
+      }),
+      dialectItem("FETCH", {
+        sqlite: "SELECT * FROM employees LIMIT 3;",
+        postgres: "SELECT * FROM employees FETCH FIRST 3 ROWS ONLY;",
+        mysql: "SELECT * FROM employees LIMIT 3;"
+      })
     ]
   },
   {
