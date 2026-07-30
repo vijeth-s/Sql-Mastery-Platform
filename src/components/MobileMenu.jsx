@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import { X } from "lucide-react";
 
-export default function MobileMenu({ navItems, isOpen, onClose }) {
+export default function MobileMenu({ navItems, isOpen, onClose, dialect, setDialect }) {
   if (!isOpen) return null;
 
   return (
@@ -16,6 +16,18 @@ export default function MobileMenu({ navItems, isOpen, onClose }) {
           <button onClick={onClose} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/10 text-slate-200">
             <X className="h-5 w-5" />
           </button>
+        </div>
+        <div className="mb-4 rounded-lg border border-white/10 bg-slate-950/80 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-sky-300">SQL Dialect</p>
+          <select
+            value={dialect}
+            onChange={(e) => setDialect(e.target.value)}
+            className="mt-3 w-full rounded-md border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-200 outline-none transition focus:border-sky-300/50"
+          >
+            <option value="sqlite">SQLite</option>
+            <option value="postgres">PostgreSQL</option>
+            <option value="mysql">MySQL</option>
+          </select>
         </div>
         <nav className="space-y-2">
           {navItems.map((item) => (
