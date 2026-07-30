@@ -2,7 +2,7 @@ import { NavLink } from "react-router-dom";
 import { ChevronDown, DatabaseZap, Layers3 } from "lucide-react";
 import { useState } from "react";
 
-export default function Sidebar({ navItems }) {
+export default function Sidebar({ navItems, dialect, setDialect }) {
   const [openLessons, setOpenLessons] = useState(true);
   const lessonPaths = ["/beginner", "/intermediate", "/advanced"];
   const secondaryItems = navItems.filter((item) => item.to !== "/" && !lessonPaths.includes(item.to));
@@ -38,6 +38,19 @@ export default function Sidebar({ navItems }) {
           </span>
           <ChevronDown className={`h-4 w-4 transition ${openLessons ? "rotate-180" : ""}`} />
         </button>
+
+        <div className="rounded-lg border border-white/10 bg-slate-950/70 p-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-300">SQL Dialect</p>
+          <select
+            value={dialect}
+            onChange={(e) => setDialect(e.target.value)}
+            className="mt-3 w-full rounded-md border border-white/10 bg-slate-900 px-3 py-2 text-sm text-slate-200 outline-none transition focus:border-sky-300/50"
+          >
+            <option value="sqlite">SQLite</option>
+            <option value="postgres">PostgreSQL</option>
+            <option value="mysql">MySQL</option>
+          </select>
+        </div>
 
         {openLessons && (
           <div className="space-y-1 pl-3">
