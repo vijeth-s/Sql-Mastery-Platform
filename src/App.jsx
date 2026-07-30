@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { NavLink, Route, Routes, useLocation } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
-import { BarChart2, BookOpen, Code2, Database, FileCode2, GraduationCap, HelpCircle, Keyboard, Menu, Search, Sparkles, Trophy, X } from "lucide-react";
+import { BarChart2, BookOpen, Code2, Copyright, Database, ExternalLink, FileCode2, Github, GraduationCap, HelpCircle, Keyboard, Linkedin, Mail, Menu, Search, Sparkles, Trophy, X } from "lucide-react";
 import Sidebar from "./components/Sidebar";
 import SQLPlayground from "./components/SQLPlayground";
 import LessonPanel from "./components/LessonPanel";
@@ -155,7 +155,7 @@ function HelpFloatingButton({ onOpenShortcuts, onOpenTour }) {
   const [hoveredBtn, setHoveredBtn] = useState(null);
 
   return (
-    <div className="fixed bottom-6 right-6 z-[80]">
+    <div className="fixed bottom-24 right-6 z-[80] sm:bottom-28">
       <AnimatePresence>
         {open && (
           <>
@@ -410,6 +410,13 @@ function AppContent() {
 
   const currentTitle = useMemo(() => navItems.find((item) => item.to === location.pathname)?.label || "Playground", [location.pathname]);
 
+  const footerLinks = [
+    { href: "https://www.linkedin.com/in/vijeth-shetty-334s/", label: "LinkedIn", icon: Linkedin },
+    { href: "mailto:vijethshetty334@gmail.com", label: "Email", icon: Mail },
+    { href: "https://github.com/vijeth-s/", label: "GitHub", icon: Github },
+    { href: "https://github.com/vijeth-s/Sql-Mastery-Platform", label: "Project Repo", icon: ExternalLink }
+  ];
+
   return (
     <>
       <div className="min-h-screen overflow-hidden bg-grid-glow bg-[length:44px_44px] text-slate-100">
@@ -478,15 +485,44 @@ function AppContent() {
                 </motion.div>
               </div>
             ) : (
-              <Routes>
-                <Route path="/" element={<PlaygroundPage db={db} resetDatabase={resetDatabase} refreshKey={refreshKey} onDatabaseChanged={handleDatabaseChanged} tableMetadata={tableMetadataState} dialect={dialect} />} />
-                <Route path="/beginner" element={<LessonsPage level="beginner" searchTerm={searchTerm} setSearchTerm={setSearchTerm} dialect={dialect} setDialect={setDialect} />} />
-                <Route path="/intermediate" element={<LessonsPage level="intermediate" searchTerm={searchTerm} setSearchTerm={setSearchTerm} dialect={dialect} setDialect={setDialect} />} />
-                <Route path="/advanced" element={<LessonsPage level="advanced" searchTerm={searchTerm} setSearchTerm={setSearchTerm} dialect={dialect} setDialect={setDialect} />} />
-                <Route path="/challenges" element={<Challenges db={db} />} />
-                <Route path="/progress" element={<Progress />} />
-                <Route path="/cheat-sheet" element={<CheatSheet dialect={dialect} />} />
-              </Routes>
+              <>
+                <Routes>
+                  <Route path="/" element={<PlaygroundPage db={db} resetDatabase={resetDatabase} refreshKey={refreshKey} onDatabaseChanged={handleDatabaseChanged} tableMetadata={tableMetadataState} dialect={dialect} />} />
+                  <Route path="/beginner" element={<LessonsPage level="beginner" searchTerm={searchTerm} setSearchTerm={setSearchTerm} dialect={dialect} setDialect={setDialect} />} />
+                  <Route path="/intermediate" element={<LessonsPage level="intermediate" searchTerm={searchTerm} setSearchTerm={setSearchTerm} dialect={dialect} setDialect={setDialect} />} />
+                  <Route path="/advanced" element={<LessonsPage level="advanced" searchTerm={searchTerm} setSearchTerm={setSearchTerm} dialect={dialect} setDialect={setDialect} />} />
+                  <Route path="/challenges" element={<Challenges db={db} />} />
+                  <Route path="/progress" element={<Progress />} />
+                  <Route path="/cheat-sheet" element={<CheatSheet dialect={dialect} />} />
+                </Routes>
+
+                <footer className="mt-auto border-t border-white/10 bg-slate-950/70 px-4 py-4 backdrop-blur-xl">
+                  <div className="mx-auto flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="flex items-center gap-2 text-sm text-slate-400">
+                      <Copyright className="h-4 w-4" />
+                      <span>2026 Vijeth. All rights reserved.</span>
+                    </p>
+
+                    <div className="flex items-center gap-2">
+                      {footerLinks.map(({ href, label, icon: Icon }) => (
+                        <a
+                          key={label}
+                          href={href}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={label}
+                          className="group relative flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-slate-200 transition hover:border-sky-300/40 hover:bg-slate-800 hover:text-white"
+                        >
+                          <Icon className="h-4 w-4" />
+                          <span className="pointer-events-none absolute bottom-full mb-2 hidden whitespace-nowrap rounded-md border border-white/10 bg-slate-900 px-2.5 py-1 text-xs text-slate-200 shadow-lg group-hover:block">
+                            {label}
+                          </span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                </footer>
+              </>
             )}
           </div>
         </div>
