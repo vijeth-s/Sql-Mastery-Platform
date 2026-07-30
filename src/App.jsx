@@ -421,8 +421,8 @@ function AppContent() {
     <>
       <div className="min-h-screen overflow-hidden bg-grid-glow bg-[length:44px_44px] text-slate-100">
         <div className="flex h-screen">
-          <Sidebar navItems={navItems} />
-          <MobileMenu navItems={navItems} isOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
+          <Sidebar navItems={navItems} dialect={dialect} setDialect={setDialect} />
+          <MobileMenu navItems={navItems} isOpen={mobileOpen} onClose={() => setMobileOpen(false)} dialect={dialect} setDialect={setDialect} />
           <div className="flex min-w-0 flex-1 flex-col">
             <header className="sticky top-0 z-20 border-b border-white/10 bg-ink-950/80 px-4 py-2 backdrop-blur-xl lg:px-6">
               <div className="flex items-center justify-between gap-3">
